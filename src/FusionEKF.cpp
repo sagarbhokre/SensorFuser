@@ -9,6 +9,9 @@ using Eigen::VectorXd;
 using std::vector;
 
 #define DEBUG (0)
+#define ENABLE_RADAR (1)
+#define ENABLE_LASER (1)
+#define THRESHOLD (0.0001)
 /*
  * Constructor.
  */
@@ -28,16 +31,16 @@ FusionEKF::FusionEKF() {
               0, 0.0225;
 
   //measurement covariance matrix - radar
-  R_radar_ << 0.09, 0, 0,
-              0, 0.0009, 0,
+  R_radar_ << 0.03, 0, 0,
+              0, 0.0000009, 0,
               0, 0, 0.09;
 
   H_laser_ << 1,0,0,0,
               0,1,0,0;
 
   /* Set the process and measurement noises */
-  noise_ax =  5.00;
-  noise_ay =  5.00;
+  noise_ax =   1.90;
+  noise_ay =   1.90;
 }
 
 /**
@@ -70,6 +73,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
                0, 0, 0, 1;
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+      if((measurement_pack.raw_measurements_[0] < THRESHOLD) &&
+         (measurement_pack.raw_measurements_[1] < THRESHOLD) &&
+         (measurement_pack.raw_measurements_[2] < THRESHOLD)) {
+        return;
+      }
+
       /* Convert radar from polar to cartesian coordinates and initialize state */
       double r = measurement_pack.raw_measurements_[0];
       double th = measurement_pack.raw_measurements_[1];
@@ -77,6 +86,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       ekf_.x_ << r*cos(th), r*sin(th), rd*cos(th) , rd*sin(th);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+      if((measurement_pack.raw_measurements_[0] < THRESHOLD) &&
+         (measurement_pack.raw_measurements_[1] < THRESHOLD)) {
+        return;
+      }
+
       /* Initialize state */
       ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
     }
@@ -114,6 +128,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    ****************************************************************************/
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+    if(!ENABLE_RADAR) return;
     // Radar updates
     Tools tools;
     ekf_.H_  = tools.CalculateJacobian(ekf_.x_);
@@ -121,6 +136,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
+    if(!ENABLE_LASER) return;
     // Laser updates
     ekf_.H_  = H_laser_;
     ekf_.R_  = R_laser_;
