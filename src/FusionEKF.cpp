@@ -121,7 +121,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
              cub_dt/2*noise_ax, 0,                  sqr_dt*noise_ax,    0,
              0,                 cub_dt/2*noise_ay,  0,                  sqr_dt*noise_ay;
 
-  ekf_.Predict();
+  if (dt > THRESHOLD) {
+    ekf_.Predict();
+  }
 
   /*****************************************************************************
    *  Update

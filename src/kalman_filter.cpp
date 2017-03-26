@@ -3,7 +3,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-#define THRESHOLD 0.00001
+#define THRESHOLD (0.00001)
 
 KalmanFilter::KalmanFilter() {}
 
@@ -30,9 +30,9 @@ void KalmanFilter::ComputeEstimate(VectorXd &z_pred, const VectorXd &z)
 {
   VectorXd y = z - z_pred;
   MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
   MatrixXd PHt = P_ * Ht;
+  MatrixXd S = H_ * PHt + R_;
+  MatrixXd Si = S.inverse();
   MatrixXd K = PHt * Si;
 
   //new estimate
